@@ -418,6 +418,18 @@
         const supportedLangs = ['fa', 'en', 'ru', 'ar'];
         
         // --- LOGIC ---
+
+function parseExpire(value) {
+    if (!value || value == 0) return 0;
+    value = String(value).trim();
+    if (/^\d{10}$/.test(value)) return Number(value);
+    if (/^\d{13}$/.test(value)) return Math.floor(Number(value)/1000);
+    const t = Date.parse(value.replace(' ','T'));
+    if (!isNaN(t)) return Math.floor(t/1000);
+    return 0;
+}
+
+
         const core = document.getElementById('data-core').dataset;
         let currentLang = localStorage.getItem('lang') || 'fa';
         let currentTheme = localStorage.getItem('theme') || 'dark';
@@ -453,14 +465,12 @@
             }
             
             // 3. Time calculation (Visual only)
-            let daysLeft = 0;
-            const expire = parseFloat(core.expire) || 0;
-            if (expire) {
-                const now = Math.floor(Date.now() / 1000);
-                const diff = expire - now;
-                if (diff > 0) daysLeft = Math.ceil(diff / 86400);
-            } else {
-                daysLeft = Infinity;
+            const expire = parseExpire(core.expire);
+            let daysLeft = Infinity;
+            if (expire > 0) {
+                const now = Math.floor(Date.now()/1000);
+                const diff = expire-now;
+                daysLeft=Math.max(0,Math.ceil(diff/86400));
             }
             
             // 4. Apply UI
@@ -512,7 +522,7 @@
             
             if(expireTimestamp) {
                 document.getElementById('ui-days').textContent = daysLeft;
-                const timeP = daysLeft > 0 ? 75 : 0; 
+                let timeP=100;if(daysLeft<=0)timeP=0;else if(daysLeft<=3)timeP=15;else if(daysLeft<=7)timeP=35;else if(daysLeft<=30)timeP=70;else timeP=100; 
                 animateCircle('time-bar', timeP);
             } else {
                 document.getElementById('ui-days').textContent = '∞';
